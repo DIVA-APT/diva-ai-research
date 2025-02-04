@@ -155,8 +155,8 @@ def analyze_expert_opinions(stock_name):
     result_json = {
         "analysis": result
     }
-    # print(result_json)
-    return result_json
+    print(result_json)
+    #return result_json
 
 
 if __name__ == "__main__":

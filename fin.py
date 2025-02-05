@@ -36,29 +36,29 @@ def analyze_financial(stock_name):
     chunks = [matches['metadata']['raw_data'] for matches in response['matches']]
     context = " ".join(chunks)
 
-    rag_prompt = f"{context} 이 문서는 전자공시시스템인 DART에서 제공하는 오픈API서비스 중 '단일회사 주요 재무지표'에 대한 것입니다. 문서 내의 corp_code, corp_name 등 용어에 대한 기본 개념을 바탕으로 {stock_name}에 대한 다음 정보를 바탕으로 회사의 정체성과 시장 포지셔닝을 약 200자로 해석합니다."
+    rag_prompt = (f"{context} 이 문서는 전자공시시스템인 DART에서 제공하는 오픈API서비스를 통해 얻은 '회사별 주요 재무지표'에 대한 것입니다. 문서 내의 'corp_code', 'corp_name' 등의 기본 개념을 바탕으로 {stock_name}에 대한 주요 재무재표 분석을 제공해 주세요. 추가로 부채율, 총자산 대비 기업 가치, {stock_name}의 전체 자산 대비 매출을 중심으로 실제 데이터를 기반으로 한 분석을 수행하며, 이를 동일 산업 내 다른 주요 기업들과 비교하여 표 형식으로 정리해 주세요. 모든 수치는 공식 데이터를 사용하며, {context}에 없는 정보의 경우 인터넷 검색을 활용하되 가정이나 추정, 예시를 사용하지 않도록 해주세요. 비교 대상 기업들의 이름과 각 기업의 비교 지표도 명확히 제공해 주세요. 결과는 곧바로 사용자에게 유용한 정보로 제공되어야 하며, 분석 과정이나 결과의 해석에 대한 내용은 제외해야 합니다.")
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a stock news analysis expert synthesizing complex information."},
+            {"role": "system",
+             "content": "당신은 개인 투자자들이 특정 종목에 투자하기 위해 필요한 재무제표 데이터에 쉽게 접근하고 데이터 기반의 효율적인 투자 결정을 내릴 수 있도록 돕는 주식 투자 정보 제공자입니다."},
             {"role": "user", "content": rag_prompt}
         ],
         temperature=0.1
     )
 
     result = response.choices[0].message.content
-    # print("\nGenerated Result:\n")
-    # print(result)
+    print("\nGenerated Result:\n")
+    print(result)
 
     result_json = {
         "result_fin": result
     }
-    print(json.dumps(result_json, ensure_ascii=False))
+    # print(json.dumps(result_json, ensure_ascii=False))
     # return result_json
 
 
 if __name__ == "__main__":
-    stock_name = sys.argv[1]
-    # stock_name = '삼성전자'
+    # stock_name = sys.argv[1]
+    stock_name = '삼성전자'
     analyze_financial(stock_name)
-

@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -153,9 +154,9 @@ def analyze_expert_opinions(stock_name):
     # print(result)
 
     result_json = {
-        "analysis": result
+        "result_report": result
     }
-    print(result_json)
+    print(json.dumps(result_json, ensure_ascii=False))
     #return result_json
 
 

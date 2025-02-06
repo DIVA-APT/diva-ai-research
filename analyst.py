@@ -155,7 +155,7 @@ def analyze_expert_opinions(stock_name):
     # print("\nGenerated Prompt:\n")
     # print(prompt)
 
-    ## 4. LLM 기반 분석 리포트 생성
+    # 4. LLM 기반 분석 리포트 생성
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "system",
@@ -170,20 +170,26 @@ def analyze_expert_opinions(stock_name):
     # print(result)
 
     reference_links = [
-        f"[[{doc['title']}] {doc['firm']}에서 {doc['date']}에 발행한 {doc['category']} 보고서]({doc['source_url']})"
+        {
+            "title": f"[{doc['title']}]",
+            "description": f" {doc['firm']}에서 {doc['date']}에 발행한 {doc['category']} 보고서",
+            "url": doc['source_url']
+        }
         for doc in references_used
     ]
-    # for refer in reference_links :
-    #     print(refer)
 
-    result_json = {
-        "result_report": result,
-        "reference_links": reference_links
-    }
-    print(json.dumps(result_json, ensure_ascii=False))
+    # 생성된 리스트를 JSON 형식의 문자열로 변환합니다.
+    json_output = json.dumps(
+        {
+            "result_report": result,
+            "reference_links": reference_links
+        },
+        ensure_ascii=False, indent=4)
+
+    print(json_output)
 
 
 if __name__ == "__main__":
-    stock_name = sys.argv[1]
-    # stock_name = '삼성전자'
+    # stock_name = sys.argv[1]
+    stock_name = '삼성전자'
     analyze_expert_opinions(stock_name)

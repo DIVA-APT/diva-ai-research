@@ -190,6 +190,6 @@ def analyze_expert_opinions(stock_name):
 
 
 if __name__ == "__main__":
-    # stock_name = sys.argv[1]
-    stock_name = '삼성전자'
+    stock_name = sys.argv[1]
+    # stock_name = '삼성전자'
     analyze_expert_opinions(stock_name)

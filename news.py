@@ -3,7 +3,6 @@ import os
 import json
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from openai import OpenAI
@@ -39,7 +38,7 @@ def generate_questions(stock_name):
         f"각 질문은 투자자들이 관심을 가질 만한 중요한 뉴스 이슈를 다루어야 하며, 한국어로 작성해 주세요."
     )
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system",
              "content": "당신은 최신 주식 뉴스를 분석하여 투자자들에게 유용한 정보를 제공하는 금융 뉴스 전문가입니다."},
@@ -70,11 +69,30 @@ def extract_all_chunks(articles_data):
     검색된 뉴스 데이터에서 텍스트 추출.
     """
     all_chunks = []
+    all_references = []
+    # 모든 키(=질문)에 대해서 반복
     for question, documents in articles_data.items():
+        # 각 문서에서 'metadata' 안의 'chunk', 'title', 'source_url'를 추출
         for document in documents:
-            if 'metadata' in document and 'chunk' in document['metadata']:
-                all_chunks.append(document['metadata']['chunk'])
-    return all_chunks
+            if 'metadata' in document:
+                metadata = document['metadata']
+                chunk_data = {
+                    "chunk": metadata.get('chunk', ''),
+                    "title": metadata.get('title', 'No title provided'),
+                    "source_url": metadata.get('source_url', 'No URL provided')
+                }
+                all_chunks.append(chunk_data['chunk'])
+                all_references.append(chunk_data)
+    return all_chunks, all_references[:10]
+
+def remove_duplicate_documents(documents):
+    unique_docs = {}
+    for doc in documents:
+        key = (doc['title'], doc['source_url'])  # title과 source_url을 키로 사용
+        if key not in unique_docs:
+            unique_docs[key] = doc
+
+    return list(unique_docs.values())
 
 
 def analyze_news(stock_name):
@@ -86,7 +104,7 @@ def analyze_news(stock_name):
     articles = search_articles(questions)
 
     # 뉴스 텍스트 추출 및 컨텍스트 구성
-    chunk_list = extract_all_chunks(articles)
+    chunk_list, references_used = extract_all_chunks(articles)
     context = " ".join(chunk_list)
 
     # RAG 프롬프트 생성
@@ -102,26 +120,40 @@ def analyze_news(stock_name):
 
     # OpenAI GPT-4 호출
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "system",
              "content": "당신은 최신 뉴스를 종합적으로 분석하여 투자자들에게 유용한 정보를 제공하는 금융 전문가입니다."},
-            {"role": "user", "content": rag_prompt}
-        ],
+            {"role": "user", "content": rag_prompt}],
         temperature=0.1
     )
 
     # 결과 출력 및 반환
     result = response.choices[0].message.content
-    print("\nGenerated Result:\n")
-    print(result)
+    # print("\nGenerated Result:\n")
+    # print(result)
 
+    reference_links = [
+        {
+            "title": f"[{doc['title']}]",
+            "url": doc['source_url']
+        }
+        for doc in remove_duplicate_documents(references_used) ## 중복 문서 처리
+    ]
 
+    json_output = json.dumps(
+        {
+            "result_report": result,
+            "reference_links": reference_links
+        },
+        ensure_ascii=False, indent=4)
+
+    print(json_output)
 if __name__ == "__main__":
-    # 테스트용 종목 이름 설정
     stock_name = sys.argv[1]
-
-    #stock_name = '삼성전자'
+    # 테스트용 종목 이름 설정
+    # stock_name = '삼성전자'
 
     # 뉴스 분석 실행
     analyze_news(stock_name)
+
